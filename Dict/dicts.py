@@ -2,9 +2,14 @@
 # @Time    : 2024/3/28 17:41
 # @Author  : yanghangqiao / 杨杭桥
 # @Email   : easlie.yang@dbappsecurity.com.cn
-# @File    : ditc.py
+# @File    : dicts.py
 
-class Dict:
+class Dicts:
+    API = {
+        'url': '',
+        'name': ''
+
+    }
     method = {
         'POST': "新建",
         'PUT': "修改",
@@ -15,4 +20,8 @@ class Dict:
     result = {
         'success': 'success',
         'failure': 'failure'
+    }
+
+    cases = {
+
     }

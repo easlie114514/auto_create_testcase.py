@@ -5,6 +5,7 @@
 # @File    : utils.py.py
 
 import logging
+import math
 
 
 class PublicUtil:
@@ -19,13 +20,21 @@ class PublicUtil:
         boxed_text.append(horizontal_line)
         return '\n'.join(boxed_text)
 
+    @staticmethod
+    def count_decimal_places(num):
+        integer_part, decimal_part = math.modf(num)
+        if decimal_part == 0:
+            return 0
+        else:
+            return len(str(decimal_part).split('.')[1])
+
 
 class SelectUtil:
 
     # 选择用于生成用例的key值
     @staticmethod
     def select_params(keys: list, selections: list):
-        print('已识别所有key值如下')
+        print('————\n已识别所有key值如下')
         for index, value in enumerate(keys):
             print(str(index) + ': ' + value)
         while True:
@@ -45,7 +54,7 @@ class SelectUtil:
     @staticmethod
     def del_params(selections: list):
         while True:
-            print('已选择参数如下：')
+            print('————\n已选择参数如下：')
             for index, value in enumerate(selections):
                 print(str(index) + ': ' + value)
             idxs = input('请选择需要删除的参数,以-1退出（例如1,2,3,-1）：\n').split(',')
@@ -63,18 +72,21 @@ class SelectUtil:
 
     # 选择测试数据生成方式
     @staticmethod
-    def select_method(selections: list):
-        print('分别为已选择的参数选择方法以及对应值：')
+    def select_method(api_url: str, api_name: str, selections: list):
+        print('————\n分别为已选择的参数选择方法以及对应值：')
+        data_util = DataUtil()
         for seletion in selections:
             while True:
-                methods = input(f'为字段{seletion}选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit').split(',')
+                methods = input(f'为字段【{seletion}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
                 for method in methods:
                     if int(method) == 1:
-                        case = int(input('1-等价类  2-边界值'))
+                        case = int(input('————\n1-等价类  2-边界值'))
                         if case == 1:
-                            DataUtil.equivalent()
+                            print('请输入合法范围（例如：1-2,5,100-200）')
+                            data_util.get_values(method=1)
                         else:
-                            DataUtil.border()
+                            print('请输入有效等价类（例如：1-2,5,100-200）')
+                            data_util.get_values(method=0)
 
 
 class DataUtil:
@@ -94,11 +106,11 @@ class DataUtil:
                 self.get_all_keys(item, keys_list)
         return keys_list
 
-    # 根据给出的范围确定边界值
-    @staticmethod
-    def border():
+    def get_values(self, method=1):
         borders = input('请输入范围（例如：1-2,100-200）：').split(',')
-        interval_list = [list(map(int, item.split('-'))) for item in borders]
+        interval_list = [list(map(float, item.split('-')))
+                         if '-' in item else [float(item), float(item)]
+                         for item in borders]
         merged_interval = []
         for start, end in interval_list:
             merged = False
@@ -111,11 +123,46 @@ class DataUtil:
                     break
             if not merged:
                 merged_interval.append([start, end])
-        final_border = list(filter(lambda x: x[0] <= x[1], merged_interval))
-        print('已确认范围')
-        print(final_border)
+        final_borders = list(filter(lambda x: x[0] <= x[1], merged_interval))
+        final_borders.sort(key=lambda x: x[0])  # 排序
+        if method:
+            self.equivalent(final_borders)
+        else:
+            self.border(final_borders)
+
+    # 根据给出的范围确定边界值
+    @staticmethod
+    def border(borders: list):
+        boundary_values = []
+        for start, end in borders:
+            if start != end:
+                start_left = [start - 0.1 ** (PublicUtil.count_decimal_places(start) + 1), False]
+                start_right = [start + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
+                end_left = [end - 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
+                end_right = [end + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), False]
+                middle = [(start + end)/2, True]
+                boundary_values.extend([start_left, [start, True], start_right,
+                                        middle, end_left, [end, True], end_right])
+            else:
+                boundary_values.append([start, True])
+        print('已确认范围' + str(borders))
+        print('已确认边界值' + str(boundary_values))
 
     # 根据给出的范围确定等价类
     @staticmethod
-    def equivalent():
-        return 1
+    def equivalent(borders: list):
+        # total = input('请输入总范围（例如1-100），如果输入0则认为无限大范围').split('-')
+        left = borders[0][0]
+        right = borders[len(borders)-1][1]
+        # equivalence_classes = [[f'小于{left}', False]] if len(total) == 0 else [[f'{total}']]
+        equivalence_classes = [[f'小于{left}', False]]
+        for index in range(len(borders)):
+            if borders[index][0] != borders[index][1]:
+                equivalence_classes.append([f'{borders[index][0]}-{borders[index][1]}', True])
+            else:
+                equivalence_classes.append([f'{borders[index][0]}', True])
+            if index < len(borders) - 1:
+                equivalence_classes.append([f'{borders[index][1]}-{borders[index+1][0]}', False])
+        equivalence_classes.append([[f'大于{right}', False]])
+        print('已确认范围' + str(borders))
+        print('已确认等价类' + str(equivalence_classes))
