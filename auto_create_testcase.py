@@ -6,8 +6,8 @@ from Util.utils import DataUtil, SelectUtil
 def main():
     api_url = input("请输入Restful API url")
     api_name = input("请输入接口对象名称")
-    Dicts['API']['url'] = api_url
-    Dicts['API']['name'] = api_name
+    Dicts.API['url'] = api_url
+    Dicts.API['name'] = api_name
     json_str = ""
     print("请输入JSON请求体并以空行结束")
     while True:

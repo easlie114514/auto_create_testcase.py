@@ -6,6 +6,7 @@
 
 import logging
 import math
+from Dict.dicts import Dicts
 
 
 class PublicUtil:
@@ -75,18 +76,26 @@ class SelectUtil:
     def select_method(api_url: str, api_name: str, selections: list):
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
-        for seletion in selections:
+        for selection in selections:
             while True:
-                methods = input(f'为字段【{seletion}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
+                methods = input(f'为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
                 for method in methods:
                     if int(method) == 1:
                         case = int(input('————\n1-等价类  2-边界值'))
                         if case == 1:
                             print('请输入合法范围（例如：1-2,5,100-200）')
-                            data_util.get_values(method=1)
+                            equivalence_classes = data_util.get_values(method=1)
+                            print('用例标题：\n' + Dicts.title['POST'].format(name=Dicts.API['name'], param=selection))
+                            for step in range(len(equivalence_classes)):
+                                print(Dicts.content['content'].format(step=step, api=Dicts.API['name'], method='新增',
+                                                                      name=Dicts.API['name'], param=selection,
+                                                                      range=equivalence_classes[step][0]))
+                                print(Dicts.content['checks'].format(step=step, result=equivalence_classes[step][1]))
                         else:
                             print('请输入有效等价类（例如：1-2,5,100-200）')
                             data_util.get_values(method=0)
+
+
 
 
 class DataUtil:
@@ -107,7 +116,7 @@ class DataUtil:
         return keys_list
 
     def get_values(self, method=1):
-        borders = input('请输入范围（例如：1-2,100-200）：').split(',')
+        borders = input().split(',')
         interval_list = [list(map(float, item.split('-')))
                          if '-' in item else [float(item), float(item)]
                          for item in borders]
@@ -126,9 +135,9 @@ class DataUtil:
         final_borders = list(filter(lambda x: x[0] <= x[1], merged_interval))
         final_borders.sort(key=lambda x: x[0])  # 排序
         if method:
-            self.equivalent(final_borders)
+            return self.equivalent(final_borders)
         else:
-            self.border(final_borders)
+            return self.border(final_borders)
 
     # 根据给出的范围确定边界值
     @staticmethod
@@ -163,6 +172,9 @@ class DataUtil:
                 equivalence_classes.append([f'{borders[index][0]}', True])
             if index < len(borders) - 1:
                 equivalence_classes.append([f'{borders[index][1]}-{borders[index+1][0]}', False])
-        equivalence_classes.append([[f'大于{right}', False]])
+        equivalence_classes.append([f'大于{right}', False])
         print('已确认范围' + str(borders))
         print('已确认等价类' + str(equivalence_classes))
+        return equivalence_classes
+
+

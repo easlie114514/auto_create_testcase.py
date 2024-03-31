@@ -10,11 +10,22 @@ class Dicts:
         'name': ''
 
     }
+
     method = {
         'POST': "新建",
         'PUT': "修改",
         'GET': "查询",
         'DELETE': "删除"
+    }
+
+    title = {
+        'POST': '检查新建{name}时{param}字段有效值无效值测试',
+
+    }
+
+    content = {
+        'content': '步骤{step}，通过接口{api}{method}{name}时，参数{param}为{range}',
+        'checks': '【check{step}】{result}'
     }
 
     result = {
