@@ -77,23 +77,22 @@ class SelectUtil:
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
         for selection in selections:
-            while True:
-                methods = input(f'为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
-                for method in methods:
-                    if int(method) == 1:
-                        case = int(input('————\n1-等价类  2-边界值'))
-                        if case == 1:
-                            print('请输入合法范围（例如：1-2,5,100-200）')
-                            equivalence_classes = data_util.get_values(method=1)
-                            print('用例标题：\n' + Dicts.title['POST'].format(name=Dicts.API['name'], param=selection))
-                            for step in range(len(equivalence_classes)):
-                                print(Dicts.content['content'].format(step=step, api=Dicts.API['name'], method='新增',
-                                                                      name=Dicts.API['name'], param=selection,
-                                                                      range=equivalence_classes[step][0]))
-                                print(Dicts.content['checks'].format(step=step, result=equivalence_classes[step][1]))
-                        else:
-                            print('请输入有效等价类（例如：1-2,5,100-200）')
-                            data_util.get_values(method=0)
+            methods = input(f'为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
+            for method in methods:
+                if int(method) == 1:
+                    case = int(input('————\n1-等价类  2-边界值'))
+                    if case == 1:
+                        print('请输入合法范围（例如：1-2,5,100-200）')
+                        equivalence_classes = data_util.get_values(method=1)
+                        print('用例标题：\n' + Dicts.title['POST'].format(name=Dicts.API['name'], param=selection))
+                        for step in range(len(equivalence_classes)):
+                            print(Dicts.content['content'].format(step=step, api=Dicts.API['name'], method='新增',
+                                                                  name=Dicts.API['name'], param=selection,
+                                                                  range=equivalence_classes[step][0]))
+                            print(Dicts.content['checks'].format(step=step, result=equivalence_classes[step][1]))
+                    else:
+                        print('请输入有效等价类（例如：1-2,5,100-200）')
+                        data_util.get_values(method=0)
 
 
 
