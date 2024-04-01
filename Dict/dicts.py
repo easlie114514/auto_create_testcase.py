@@ -5,9 +5,12 @@
 # @File    : dicts.py
 
 class Dicts:
+    def __init__(self):
+        pass
+
     API = {
-        'url': '',
-        'name': ''
+        'url': '/api/url',
+        'name': 'api_name'
 
     }
 
@@ -24,7 +27,7 @@ class Dicts:
     }
 
     content = {
-        'content': '步骤{step}，通过接口{api}{method}{name}时，参数{param}为{range}',
+        'content': '步骤{step}，通过接口{api}{method}{name}时，参数{param}为{range}【check{step}】',
         'checks': '【check{step}】{result}'
     }
 
@@ -35,4 +38,10 @@ class Dicts:
 
     cases = {
 
+    }
+
+    excel = {
+        'A1': '用例标题',
+        'B1': '用例步骤',
+        'C1': '检查点'
     }

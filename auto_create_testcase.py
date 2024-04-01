@@ -1,6 +1,6 @@
 import json
 from Dict.dicts import Dicts
-from Util.utils import DataUtil, SelectUtil
+from Util.utils import DataUtil, SelectUtil, PublicUtil
 
 
 def main():
@@ -28,7 +28,7 @@ def main():
             elif choose == 2:
                 selections = SelectUtil.del_params(selections)
             elif choose == 3:
-                selections = SelectUtil.select_method(api_url, api_name, selections)
+                selections = SelectUtil.select_method(selections)
             else:
                 break
     except json.JSONDecodeError as e:

@@ -6,10 +6,13 @@
 
 import logging
 import math
+from openpyxl import Workbook
+from openpyxl import load_workbook
 from Dict.dicts import Dicts
 
 
 class PublicUtil:
+
     @staticmethod
     def create_box(text):
         lines = text.split('\n')
@@ -28,6 +31,41 @@ class PublicUtil:
             return 0
         else:
             return len(str(decimal_part).split('.')[1])
+
+    @staticmethod
+    def create_case(data: list, param: str):
+        case = [Dicts.title['POST'].format(name=Dicts.API['name'], param=param)]
+        for step in range(len(data)):
+            content = Dicts.content['content'].format(step=step + 1, api=Dicts.API['url'], method='新增',
+                                                      name=Dicts.API['name'], param=param,
+                                                      range=data[step][0])
+            check = Dicts.content['checks'].format(step=step + 1, result=data[step][1])
+            case.extend([content, check])
+        return case
+
+    @staticmethod
+    def init_xlsx():
+        wb = Workbook()
+        ws = wb.active
+        ws['A1'] = Dicts.excel['A1']
+        ws['B1'] = Dicts.excel['B1']
+        ws['C1'] = Dicts.excel['C1']
+        xlsx_name = f'【{Dicts.API["name"]}】接口测试用例.xlsx'
+        wb.save(xlsx_name)
+        return xlsx_name
+
+    @staticmethod
+    def write_xlsx(xlsx_name: str, cases: list):
+        wb = load_workbook(xlsx_name)
+        ws = wb.active
+        row = ws.max_row + 1
+        ws.cell(row=row, column=1, value=cases[0])
+        row += 1
+        for i in range(1, len(cases), 2):
+            ws.cell(row=row, column=2, value=cases[i])
+            ws.cell(row=row, column=3, value=cases[i+1])
+            row += 1
+        wb.save(xlsx_name)
 
 
 class SelectUtil:
@@ -73,28 +111,25 @@ class SelectUtil:
 
     # 选择测试数据生成方式
     @staticmethod
-    def select_method(api_url: str, api_name: str, selections: list):
+    def select_method(selections: list):
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
+        xlsx_name = PublicUtil.init_xlsx()
         for selection in selections:
-            methods = input(f'为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
+            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
             for method in methods:
                 if int(method) == 1:
-                    case = int(input('————\n1-等价类  2-边界值'))
+                    case = int(input('————\n1-等价类  2-边界值\n'))
                     if case == 1:
-                        print('请输入合法范围（例如：1-2,5,100-200）')
+                        print('————\n请输入合法范围（例如：1-2,5,100-200）')
                         equivalence_classes = data_util.get_values(method=1)
-                        print('用例标题：\n' + Dicts.title['POST'].format(name=Dicts.API['name'], param=selection))
-                        for step in range(len(equivalence_classes)):
-                            print(Dicts.content['content'].format(step=step, api=Dicts.API['name'], method='新增',
-                                                                  name=Dicts.API['name'], param=selection,
-                                                                  range=equivalence_classes[step][0]))
-                            print(Dicts.content['checks'].format(step=step, result=equivalence_classes[step][1]))
+                        case = PublicUtil.create_case(data=equivalence_classes, param=selection)
+                        PublicUtil.write_xlsx(xlsx_name, case)
                     else:
-                        print('请输入有效等价类（例如：1-2,5,100-200）')
-                        data_util.get_values(method=0)
-
-
+                        print('————\n请输入有效等价类（例如：1-2,5,100-200）')
+                        boundary_values = data_util.get_values(method=0)
+                        case = PublicUtil.create_case(data=boundary_values, param=selection)
+                        PublicUtil.write_xlsx(xlsx_name, case)
 
 
 class DataUtil:
@@ -127,7 +162,7 @@ class DataUtil:
                     merged_interval[i][0] = min(merged_interval[i][0], start)
                     merged_interval[i][1] = max(merged_interval[i][1], end)
                     merged = True
-                    print('请不要试图找bug...')
+                    logging.warning('请不要试图找bug...')
                     break
             if not merged:
                 merged_interval.append([start, end])
@@ -148,20 +183,21 @@ class DataUtil:
                 start_right = [start + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
                 end_left = [end - 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
                 end_right = [end + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), False]
-                middle = [(start + end)/2, True]
+                middle = [(start + end) / 2, True]
                 boundary_values.extend([start_left, [start, True], start_right,
                                         middle, end_left, [end, True], end_right])
             else:
                 boundary_values.append([start, True])
-        print('已确认范围' + str(borders))
-        print('已确认边界值' + str(boundary_values))
+        logging.info('已确认范围' + str(borders))
+        logging.info('已确认边界值' + str(boundary_values))
+        return boundary_values
 
     # 根据给出的范围确定等价类
     @staticmethod
     def equivalent(borders: list):
         # total = input('请输入总范围（例如1-100），如果输入0则认为无限大范围').split('-')
         left = borders[0][0]
-        right = borders[len(borders)-1][1]
+        right = borders[len(borders) - 1][1]
         # equivalence_classes = [[f'小于{left}', False]] if len(total) == 0 else [[f'{total}']]
         equivalence_classes = [[f'小于{left}', False]]
         for index in range(len(borders)):
@@ -170,10 +206,8 @@ class DataUtil:
             else:
                 equivalence_classes.append([f'{borders[index][0]}', True])
             if index < len(borders) - 1:
-                equivalence_classes.append([f'{borders[index][1]}-{borders[index+1][0]}', False])
+                equivalence_classes.append([f'{borders[index][1]}-{borders[index + 1][0]}', False])
         equivalence_classes.append([f'大于{right}', False])
-        print('已确认范围' + str(borders))
-        print('已确认等价类' + str(equivalence_classes))
+        logging.info('已确认范围' + str(borders))
+        logging.info('已确认等价类' + str(equivalence_classes))
         return equivalence_classes
-
-
