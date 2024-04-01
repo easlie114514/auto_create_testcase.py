@@ -33,8 +33,8 @@ class PublicUtil:
             return len(str(decimal_part).split('.')[1])
 
     @staticmethod
-    def create_case(data: list, param: str):
-        case = [Dicts.title['POST'].format(name=Dicts.API['name'], param=param)]
+    def create_case(method: str, data: list, param: str):
+        case = [Dicts.title[method].format(name=Dicts.API['name'], param=param)]
         for step in range(len(data)):
             content = Dicts.content['content'].format(step=step + 1, api=Dicts.API['url'], method='新增',
                                                       name=Dicts.API['name'], param=param,
@@ -118,18 +118,21 @@ class SelectUtil:
         for selection in selections:
             methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
             for method in methods:
-                if int(method) == 1:
+                if method == '1' or method == '2':
                     case = int(input('————\n1-等价类  2-边界值\n'))
                     if case == 1:
                         print('————\n请输入合法范围（例如：1-2,5,100-200）')
                         equivalence_classes = data_util.get_values(method=1)
-                        case = PublicUtil.create_case(data=equivalence_classes, param=selection)
+                        case = PublicUtil.create_case(method=Dicts.method[method], data=equivalence_classes,
+                                                      param=selection)
                         PublicUtil.write_xlsx(xlsx_name, case)
                     else:
                         print('————\n请输入有效等价类（例如：1-2,5,100-200）')
                         boundary_values = data_util.get_values(method=0)
-                        case = PublicUtil.create_case(data=boundary_values, param=selection)
+                        case = PublicUtil.create_case(method=Dicts.method[method],data=boundary_values,
+                                                      param=selection)
                         PublicUtil.write_xlsx(xlsx_name, case)
+
 
 
 class DataUtil:

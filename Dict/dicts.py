@@ -15,15 +15,15 @@ class Dicts:
     }
 
     method = {
-        'POST': "新建",
-        'PUT': "修改",
-        'GET': "查询",
-        'DELETE': "删除"
+        '1': "POST",
+        '2': "PUT",
+        '3': "GET",
+        '4': "DELETE"
     }
 
     title = {
         'POST': '检查新建{name}时{param}字段有效值无效值测试',
-
+        'PUT': '检查修改{name}时{param}字段有效值无效值测试'
     }
 
     content = {
