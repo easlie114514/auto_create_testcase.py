@@ -5,6 +5,7 @@
 # @File    : utils.py.py
 
 import logging
+import re
 import math
 from openpyxl import Workbook
 from openpyxl import load_workbook
@@ -33,12 +34,20 @@ class PublicUtil:
             return len(str(decimal_part).split('.')[1])
 
     @staticmethod
-    def create_case(method: str, data: list, param: str):
+    def create_case(method: str, data: list, param: str, param_type: str, case: int):
         case = [Dicts.title[method].format(name=Dicts.API['name'], param=param)]
         for step in range(len(data)):
+            val = str(data[step][0])
+            if re.match('^大于', val) or re.match('^小于', val):
+                value = val
+            elif '-' in val:
+                value = '满足' + val
+            else:
+                value = '为' + val
             content = Dicts.content['content'].format(step=step + 1, api=Dicts.API['url'], method='新增',
                                                       name=Dicts.API['name'], param=param,
-                                                      range=data[step][0])
+                                                      type=Dicts.param_type[param_type],
+                                                      value=value)
             check = Dicts.content['checks'].format(step=step + 1, result=data[step][1])
             case.extend([content, check])
         return case
@@ -75,13 +84,13 @@ class SelectUtil:
     def select_params(keys: list, selections: list):
         print('————\n已识别所有key值如下')
         for index, value in enumerate(keys):
-            print(str(index) + ': ' + value)
+            print(f'{index:2d}'+f': {value}')
         while True:
             idxs = input('请选择需要使用的key值索引并重命名,以-1退出（例如1,2,3,-1）：\n').split(',')
             for idx in idxs:
                 if int(idx) != -1:
                     if int(idx) < len(keys):
-                        selections.append(input(f'{keys[int(idx)]}重命名为：'))
+                        selections.append(input(f'{keys[int(idx)].split("—")[-1]}重命名为：'))
                     else:
                         logging.error(f'索引{idx}无效')
                 else:
@@ -121,38 +130,47 @@ class SelectUtil:
                 if method == '1' or method == '2':
                     case = int(input('————\n1-等价类  2-边界值\n'))
                     if case == 1:
+                        param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入合法范围（例如：1-2,5,100-200）')
-                        equivalence_classes = data_util.get_values(method=1)
+                        equivalence_classes = data_util.get_values(param_type=param_type, method=1)
                         case = PublicUtil.create_case(method=Dicts.method[method], data=equivalence_classes,
-                                                      param=selection)
+                                                      param=selection,
+                                                      param_type='length' if param_type == '1' else 'value',
+                                                      case=case)
                         PublicUtil.write_xlsx(xlsx_name, case)
                     else:
+                        param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入有效等价类（例如：1-2,5,100-200）')
-                        boundary_values = data_util.get_values(method=0)
-                        case = PublicUtil.create_case(method=Dicts.method[method],data=boundary_values,
-                                                      param=selection)
+                        boundary_values = data_util.get_values(param_type=param_type, method=0)
+                        case = PublicUtil.create_case(method=Dicts.method[method], data=boundary_values,
+                                                      param=selection,
+                                                      param_type='length' if param_type == '1' else 'value',
+                                                      case=case)
                         PublicUtil.write_xlsx(xlsx_name, case)
-
+                elif method == '3':
+                    pass
+                elif method == '4':
+                    pass
 
 
 class DataUtil:
 
     # 获取JSON中所有key值
-    def get_all_keys(self, json_data, keys_list=None):
+    def get_all_keys(self, json_data, indent=0, keys_list=None):
         if keys_list is None:
             keys_list = []
         # 处理内嵌dict
         if isinstance(json_data, dict):
             for key, value in json_data.items():
-                keys_list.append(key)
-                self.get_all_keys(value, keys_list)
+                keys_list.append(' ' * indent + '├——' * bool(indent) + str(key))
+                self.get_all_keys(value, indent + 2, keys_list)
         # 处理内嵌list
         if isinstance(json_data, list):
             for item in json_data:
-                self.get_all_keys(item, keys_list)
+                self.get_all_keys(item, indent + 2, keys_list)
         return keys_list
 
-    def get_values(self, method=1):
+    def get_values(self, param_type: str, method=1):
         borders = input().split(',')
         interval_list = [list(map(float, item.split('-')))
                          if '-' in item else [float(item), float(item)]
@@ -170,7 +188,8 @@ class DataUtil:
             if not merged:
                 merged_interval.append([start, end])
         final_borders = list(filter(lambda x: x[0] <= x[1], merged_interval))
-        final_borders.sort(key=lambda x: x[0])  # 排序
+        # final_borders.sort(key=lambda x: x[0])
+        final_borders = sorted(final_borders, key=lambda x: int(x[0]) if param_type == '1' else x[0])   # 排序
         if method:
             return self.equivalent(final_borders)
         else:
