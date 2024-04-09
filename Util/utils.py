@@ -34,7 +34,7 @@ class PublicUtil:
             return len(str(decimal_part).split('.')[1])
 
     @staticmethod
-    def create_case(method: str, data: list, param: str, param_type: str, case: int):
+    def create_case(method: str, data: list, param: str, param_type: str):
         case = [Dicts.title[method].format(name=Dicts.API['name'], param=param)]
         for step in range(len(data)):
             val = str(data[step][0])
@@ -128,24 +128,33 @@ class SelectUtil:
             methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
             for method in methods:
                 if method == '1' or method == '2':
-                    case = int(input('————\n1-等价类  2-边界值\n'))
+                    case = int(input('————\n1-等价类  2-边界值  3-自定义\n'))
                     if case == 1:
                         param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入合法范围（例如：1-2,5,100-200）')
                         equivalence_classes = data_util.get_values(param_type=param_type, method=1)
                         case = PublicUtil.create_case(method=Dicts.method[method], data=equivalence_classes,
                                                       param=selection,
-                                                      param_type='length' if param_type == '1' else 'value',
-                                                      case=case)
+                                                      param_type='length' if param_type == '1' else 'value')
                         PublicUtil.write_xlsx(xlsx_name, case)
-                    else:
+                    elif case == 2:
                         param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入有效等价类（例如：1-2,5,100-200）')
                         boundary_values = data_util.get_values(param_type=param_type, method=0)
                         case = PublicUtil.create_case(method=Dicts.method[method], data=boundary_values,
                                                       param=selection,
-                                                      param_type='length' if param_type == '1' else 'value',
-                                                      case=case)
+                                                      param_type='length' if param_type == '1' else 'value')
+                        PublicUtil.write_xlsx(xlsx_name, case)
+                    else:
+                        valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').split(',')
+                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').split(',')
+                        custom = []
+                        for value in valid_custom:
+                            custom.append([value, True])
+                        for value in invalid_custom:
+                            custom.append([value, False])
+                        case = PublicUtil.create_case(method=Dicts.method[method], data=custom, param=selection,
+                                                      param_type='custom')
                         PublicUtil.write_xlsx(xlsx_name, case)
                 elif method == '3':
                     pass
@@ -187,9 +196,10 @@ class DataUtil:
                     break
             if not merged:
                 merged_interval.append([start, end])
-        final_borders = list(filter(lambda x: x[0] <= x[1], merged_interval))
+        increase = list(filter(lambda x: x[0] <= x[1], merged_interval))   # 排除左值大于右值
+        increase = [[int(item) for item in sublist] for sublist in increase] if param_type == '1' else increase
         # final_borders.sort(key=lambda x: x[0])
-        final_borders = sorted(final_borders, key=lambda x: int(x[0]) if param_type == '1' else x[0])   # 排序
+        final_borders = sorted(increase, key=lambda x: int(x[0]) if param_type == '1' else x[0])   # 排序
         if method:
             return self.equivalent(final_borders)
         else:
@@ -201,10 +211,10 @@ class DataUtil:
         boundary_values = []
         for start, end in borders:
             if start != end:
-                start_left = [start - 0.1 ** (PublicUtil.count_decimal_places(start) + 1), False]
-                start_right = [start + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
-                end_left = [end - 0.1 ** (PublicUtil.count_decimal_places(start) + 1), True]
-                end_right = [end + 0.1 ** (PublicUtil.count_decimal_places(start) + 1), False]
+                start_left = [start - 0.1 ** (PublicUtil.count_decimal_places(start)), False]
+                start_right = [start + 0.1 ** (PublicUtil.count_decimal_places(start)), True]
+                end_left = [end - 0.1 ** (PublicUtil.count_decimal_places(start)), True]
+                end_right = [end + 0.1 ** (PublicUtil.count_decimal_places(start)), False]
                 middle = [(start + end) / 2, True]
                 boundary_values.extend([start_left, [start, True], start_right,
                                         middle, end_left, [end, True], end_right])

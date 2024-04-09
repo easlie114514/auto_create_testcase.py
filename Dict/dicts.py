@@ -34,7 +34,8 @@ class Dicts:
 
     param_type = {
         'length': '长度',
-        'value': '值'
+        'value': '值',
+        'custom': ''
     }
 
     result = {
