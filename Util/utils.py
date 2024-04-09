@@ -34,21 +34,35 @@ class PublicUtil:
             return len(str(decimal_part).split('.')[1])
 
     @staticmethod
-    def create_case(method: str, data: list, param: str, param_type: str):
+    def create_post_or_put_case(method: str, data: list, param: str, param_type: str):
         case = [Dicts.title[method].format(name=Dicts.API['name'], param=param)]
         for step in range(len(data)):
             val = str(data[step][0])
             if re.match('^大于', val) or re.match('^小于', val):
                 value = val
-            elif '-' in val:
+            elif '-' in val and re.match('^(?!-)', val):  # 排除负数
                 value = '满足' + val
             else:
                 value = '为' + val
-            content = Dicts.content['content'].format(step=step + 1, api=Dicts.API['url'], method='新增',
-                                                      name=Dicts.API['name'], param=param,
-                                                      type=Dicts.param_type[param_type],
-                                                      value=value)
-            check = Dicts.content['checks'].format(step=step + 1, result=data[step][1])
+            content = Dicts.post_or_put_content['content'].format(step=step + 1,
+                                                                  api=Dicts.API['url'],
+                                                                  method=method,
+                                                                  name=Dicts.API['name'],
+                                                                  param=param,
+                                                                  type=Dicts.param_type[
+                                                                      param_type],
+                                                                  value=value)
+            check = Dicts.post_or_put_content['checks'].format(step=step + 1, result=data[step][1])
+            case.extend([content, check])
+        return case
+
+    @staticmethod
+    def create_delete_case(method: str, index_key: str, states: list):
+        case = [Dicts.title[method].format(name=Dicts.API['name'])]
+        for step in range(len(states)):
+            content = Dicts.delete_content['content'].format(step=step + 1, url=Dicts.API['url'], name=Dicts.API['name'],
+                                                             key=index_key, state=states[step][0])
+            check = Dicts.delete_content['checks'].format(step=step + 1, result=states[step][1])
             case.extend([content, check])
         return case
 
@@ -72,7 +86,7 @@ class PublicUtil:
         row += 1
         for i in range(1, len(cases), 2):
             ws.cell(row=row, column=2, value=cases[i])
-            ws.cell(row=row, column=3, value=cases[i+1])
+            ws.cell(row=row, column=3, value=cases[i + 1])
             row += 1
         wb.save(xlsx_name)
 
@@ -84,7 +98,7 @@ class SelectUtil:
     def select_params(keys: list, selections: list):
         print('————\n已识别所有key值如下')
         for index, value in enumerate(keys):
-            print(f'{index:2d}'+f': {value}')
+            print(f'{index:2d}' + f': {value}')
         while True:
             idxs = input('请选择需要使用的key值索引并重命名,以-1退出（例如1,2,3,-1）：\n').split(',')
             for idx in idxs:
@@ -120,32 +134,33 @@ class SelectUtil:
 
     # 选择测试数据生成方式
     @staticmethod
-    def select_method(selections: list):
+    def set_post_or_put_methods(selections: list):
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
-        xlsx_name = PublicUtil.init_xlsx()
         for selection in selections:
-            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  3-GET  4-DELETE  0-exit\n').split(',')
+            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  0-exit\n').split(',')
             for method in methods:
                 if method == '1' or method == '2':
-                    case = int(input('————\n1-等价类  2-边界值  3-自定义\n'))
+                    xlsx_name = PublicUtil.init_xlsx()
+                    case = int(input('————\n1-等价类  2-边界值  3-自定义  4-bool\n'))
                     if case == 1:
                         param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入合法范围（例如：1-2,5,100-200）')
                         equivalence_classes = data_util.get_values(param_type=param_type, method=1)
-                        case = PublicUtil.create_case(method=Dicts.method[method], data=equivalence_classes,
-                                                      param=selection,
-                                                      param_type='length' if param_type == '1' else 'value')
+                        case = PublicUtil.create_post_or_put_case(method=Dicts.method[method],
+                                                                  data=equivalence_classes,
+                                                                  param=selection,
+                                                                  param_type='length' if param_type == '1' else 'value')
                         PublicUtil.write_xlsx(xlsx_name, case)
                     elif case == 2:
                         param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
                         print('————\n请输入有效等价类（例如：1-2,5,100-200）')
                         boundary_values = data_util.get_values(param_type=param_type, method=0)
-                        case = PublicUtil.create_case(method=Dicts.method[method], data=boundary_values,
-                                                      param=selection,
-                                                      param_type='length' if param_type == '1' else 'value')
+                        case = PublicUtil.create_post_or_put_case(method=Dicts.method[method], data=boundary_values,
+                                                                  param=selection,
+                                                                  param_type='length' if param_type == '1' else 'value')
                         PublicUtil.write_xlsx(xlsx_name, case)
-                    else:
+                    elif case == 3:
                         valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').split(',')
                         invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').split(',')
                         custom = []
@@ -153,13 +168,37 @@ class SelectUtil:
                             custom.append([value, True])
                         for value in invalid_custom:
                             custom.append([value, False])
-                        case = PublicUtil.create_case(method=Dicts.method[method], data=custom, param=selection,
-                                                      param_type='custom')
+                        case = PublicUtil.create_post_or_put_case(method=Dicts.method[method], data=custom,
+                                                                  param=selection,
+                                                                  param_type='custom')
                         PublicUtil.write_xlsx(xlsx_name, case)
-                elif method == '3':
-                    pass
-                elif method == '4':
-                    pass
+                    else:
+                        case = PublicUtil.create_post_or_put_case(method=Dicts.method[method],
+                                                                  data=[[True, True], [False, False]],
+                                                                  param=selection, param_type='custom')
+                        PublicUtil.write_xlsx(xlsx_name, case)
+
+    @staticmethod
+    def set_get_or_delete_methods(selections: list):
+        print('————\n分别为已选择的参数选择方法以及对应值：')
+        data_util = DataUtil()
+        methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').split(',')
+        for method in methods:
+            if method == '1':
+                pass
+            elif method == '2':
+                xlsx_name = PublicUtil.init_xlsx()
+                index_key = input('请输入删除请求的字段，例如：id\n')
+                states = []
+                valid_states = input('请输入字段的有效值，例如：存在的id\n').split(',')
+                invalid_states = input('请输入字段的无效值，例如：不存在的id,被引用的id\n').split(',')
+                for state in valid_states:
+                    states.append([state, True])
+                for state in invalid_states:
+                    states.append([state, False])
+                case = PublicUtil.create_delete_case(method=Dicts.method['4'], index_key=index_key, states=states)
+                batch = input('是否需要添加批量删除步骤？')
+                PublicUtil.write_xlsx(xlsx_name, case)
 
 
 class DataUtil:
@@ -196,10 +235,10 @@ class DataUtil:
                     break
             if not merged:
                 merged_interval.append([start, end])
-        increase = list(filter(lambda x: x[0] <= x[1], merged_interval))   # 排除左值大于右值
+        increase = list(filter(lambda x: x[0] <= x[1], merged_interval))  # 排除左值大于右值
         increase = [[int(item) for item in sublist] for sublist in increase] if param_type == '1' else increase
         # final_borders.sort(key=lambda x: x[0])
-        final_borders = sorted(increase, key=lambda x: int(x[0]) if param_type == '1' else x[0])   # 排序
+        final_borders = sorted(increase, key=lambda x: int(x[0]) if param_type == '1' else x[0])  # 排序
         if method:
             return self.equivalent(final_borders)
         else:

@@ -4,8 +4,8 @@ from Util.utils import DataUtil, SelectUtil, PublicUtil
 
 
 def main():
-    api_url = input("请输入Restful API url")
-    api_name = input("请输入接口对象名称")
+    api_url = input("请输入Restful API url\n")
+    api_name = input("请输入接口对象名称\n")
     Dicts.API['url'] = api_url
     Dicts.API['name'] = api_name
     json_str = ""
@@ -22,13 +22,15 @@ def main():
         all_keys = data_util.get_all_keys(json_data=dict_data)
         selections = []
         while True:
-            choose = int(input('————\n1-选择需要参数\n2-删除已选参数\n3-选择methods\n'))
+            choose = int(input('————\n1-选择需要参数\n2-删除已选参数\n3-配置GET/PUT方法\n'))
             if choose == 1:
                 selections = SelectUtil.select_params(all_keys, selections)
             elif choose == 2:
                 selections = SelectUtil.del_params(selections)
             elif choose == 3:
-                selections = SelectUtil.select_method(selections)
+                SelectUtil.set_post_or_put_methods(selections)
+            elif choose == 4:
+                SelectUtil.set_get_or_delete_methods(selections)
             else:
                 break
     except json.JSONDecodeError as e:
