@@ -34,7 +34,7 @@ class Dicts:
     }
 
     delete_content = {
-        'content': '步骤{step}，通过接口{url}删除{name},{key}{state}',
+        'content': '步骤{step}，通过接口{url}删除{name},{key}为{state}',
         'checks': '【check{step}】{result}'
     }
 

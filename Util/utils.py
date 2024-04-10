@@ -57,12 +57,14 @@ class PublicUtil:
         return case
 
     @staticmethod
-    def create_delete_case(method: str, index_key: str, states: list):
+    def create_delete_case(method: str, index_key: str, states: list, batch_api=None, steps=0):
         case = [Dicts.title[method].format(name=Dicts.API['name'])]
         for step in range(len(states)):
-            content = Dicts.delete_content['content'].format(step=step + 1, url=Dicts.API['url'], name=Dicts.API['name'],
-                                                             key=index_key, state=states[step][0])
-            check = Dicts.delete_content['checks'].format(step=step + 1, result=states[step][1])
+            content = Dicts.delete_content['content'].format(step=step + 1 + steps,
+                                                             url=Dicts.API['url'] if batch_api is None else batch_api,
+                                                             name=Dicts.API['name'], key=index_key,
+                                                             state=states[step][0])
+            check = Dicts.delete_content['checks'].format(step=step + 1 + steps, result=states[step][1])
             case.extend([content, check])
         return case
 
@@ -197,7 +199,13 @@ class SelectUtil:
                 for state in invalid_states:
                     states.append([state, False])
                 case = PublicUtil.create_delete_case(method=Dicts.method['4'], index_key=index_key, states=states)
-                batch = input('是否需要添加批量删除步骤？')
+                batch = int(input('是否需要添加批量删除步骤？\n1-需要  0-跳过'))
+                if batch:
+                    batch_api = input('请输入批量删除的api_url\n') + '批量'
+                    batch_case = PublicUtil.create_delete_case(method=Dicts.method['4'], index_key=index_key,
+                                                               states=states, batch_api=batch_api,
+                                                               steps=int((len(case)-1)/2))
+                    case = case + batch_case[1:]
                 PublicUtil.write_xlsx(xlsx_name, case)
 
 
