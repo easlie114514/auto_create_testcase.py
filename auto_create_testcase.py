@@ -22,7 +22,7 @@ def main():
         all_keys = data_util.get_all_keys(json_data=dict_data)
         selections = []
         while True:
-            choose = int(input('————\n1-选择需要参数\n2-删除已选参数\n3-配置GET/PUT方法\n'))
+            choose = int(input('————\n1-选择需要参数\n2-删除已选参数\n3-配置POST/PUT方法\n4-配置GET/DELETE方法\n0-exit'))
             if choose == 1:
                 selections = SelectUtil.select_params(all_keys, selections)
             elif choose == 2:
