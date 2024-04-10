@@ -102,7 +102,7 @@ class SelectUtil:
         for index, value in enumerate(keys):
             print(f'{index:2d}' + f': {value}')
         while True:
-            idxs = input('请选择需要使用的key值索引并重命名,以-1退出（例如1,2,3,-1）：\n').split(',')
+            idxs = input('请选择需要使用的key值索引并重命名,以-1退出（例如1,2,3,-1）：\n').replace('，', ',').split(',')
             for idx in idxs:
                 if int(idx) != -1:
                     if int(idx) < len(keys):
@@ -140,10 +140,14 @@ class SelectUtil:
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
         for selection in selections:
-            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  0-exit\n').split(',')
+            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  0-exit\n').replace('，', ',').\
+                split(',')
             for method in methods:
                 if method == '1' or method == '2':
-                    xlsx_name = PublicUtil.init_xlsx()
+                    if Dicts.excel['name'] is None:
+                        xlsx_name = Dicts.excel['name'] = PublicUtil.init_xlsx()
+                    else:
+                        xlsx_name = Dicts.excel['name']
                     case = int(input('————\n1-等价类  2-边界值  3-自定义  4-bool\n'))
                     if case == 1:
                         param_type = input('请输入参数性质，目前支持：1-长度  2-数值\n')
@@ -163,8 +167,9 @@ class SelectUtil:
                                                                   param_type='length' if param_type == '1' else 'value')
                         PublicUtil.write_xlsx(xlsx_name, case)
                     elif case == 3:
-                        valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').split(',')
-                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').split(',')
+                        valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').replace('，', ',').\
+                            split(',')
+                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').replace('，', ',').split(',')
                         custom = []
                         for value in valid_custom:
                             custom.append([value, True])
@@ -184,16 +189,20 @@ class SelectUtil:
     def set_get_or_delete_methods(selections: list):
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
-        methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').split(',')
+        methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').replace('，', ',').\
+            split(',')
         for method in methods:
             if method == '1':
                 pass
             elif method == '2':
-                xlsx_name = PublicUtil.init_xlsx()
+                if Dicts.excel['name'] is None:
+                    xlsx_name = Dicts.excel['name'] = PublicUtil.init_xlsx()
+                else:
+                    xlsx_name = Dicts.excel['name']
                 index_key = input('请输入删除请求的字段，例如：id\n')
                 states = []
-                valid_states = input('请输入字段的有效值，例如：存在的id\n').split(',')
-                invalid_states = input('请输入字段的无效值，例如：不存在的id,被引用的id\n').split(',')
+                valid_states = input('请输入字段的有效值，例如：存在的id\n').replace('，', ',').split(',')
+                invalid_states = input('请输入字段的无效值，例如：不存在的id,被引用的id\n').replace('，', ',').split(',')
                 for state in valid_states:
                     states.append([state, True])
                 for state in invalid_states:
@@ -227,7 +236,7 @@ class DataUtil:
         return keys_list
 
     def get_values(self, param_type: str, method=1):
-        borders = input().split(',')
+        borders = input().replace('，', ',').split(',')
         interval_list = [list(map(float, item.split('-')))
                          if '-' in item else [float(item), float(item)]
                          for item in borders]
