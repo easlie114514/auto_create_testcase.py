@@ -46,13 +46,24 @@ class PublicUtil:
                 value = '为' + val
             content = Dicts.post_or_put_content['content'].format(step=step + 1,
                                                                   api=Dicts.API['url'],
-                                                                  method=method,
+                                                                  method='新建' if method == 'POST' else '修改',
                                                                   name=Dicts.API['name'],
                                                                   param=param,
                                                                   type=Dicts.param_type[
                                                                       param_type],
                                                                   value=value)
             check = Dicts.post_or_put_content['checks'].format(step=step + 1, result=data[step][1])
+            case.extend([content, check])
+        return case
+
+    @staticmethod
+    def create_get_case(search_key: str, states: list, steps=0):
+        case = []
+        for step in range(len(states)):
+            content = Dicts.get_content['content'].format(step=step + 1 + steps,
+                                                          url=Dicts.API['url'], name=Dicts.API['name'], key=search_key,
+                                                          state=states[step][0])
+            check = Dicts.get_content['checks'].format(step=step + 1 + steps, result=states[step][1])
             case.extend([content, check])
         return case
 
@@ -121,7 +132,7 @@ class SelectUtil:
             print('————\n已选择参数如下：')
             for index, value in enumerate(selections):
                 print(str(index) + ': ' + value)
-            idxs = input('请选择需要删除的参数,以-1退出（例如1,2,3,-1）：\n').split(',')
+            idxs = input('请选择需要删除的参数,以-1退出（例如1,2,3,-1）：\n').replace('，', ',').split(',')
             for idx in idxs:
                 if int(idx) != -1:
                     if int(idx) < len(selections):
@@ -140,11 +151,11 @@ class SelectUtil:
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
         for selection in selections:
-            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  0-exit\n').replace('，', ',').\
+            methods = input(f'————\n为字段【{selection}】选择methods\n1-POST  2-PUT  0-exit\n').replace('，', ','). \
                 split(',')
             for method in methods:
                 if method == '1' or method == '2':
-                    if Dicts.excel['name'] is None:
+                    if Dicts.excel['name'] == '':
                         xlsx_name = Dicts.excel['name'] = PublicUtil.init_xlsx()
                     else:
                         xlsx_name = Dicts.excel['name']
@@ -167,9 +178,10 @@ class SelectUtil:
                                                                   param_type='length' if param_type == '1' else 'value')
                         PublicUtil.write_xlsx(xlsx_name, case)
                     elif case == 3:
-                        valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').replace('，', ',').\
+                        valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').replace('，', ','). \
                             split(',')
-                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').replace('，', ',').split(',')
+                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').replace('，', ',').split(
+                            ',')
                         custom = []
                         for value in valid_custom:
                             custom.append([value, True])
@@ -189,13 +201,37 @@ class SelectUtil:
     def set_get_or_delete_methods(selections: list):
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
-        methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').replace('，', ',').\
+        methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').replace('，', ','). \
             split(',')
         for method in methods:
             if method == '1':
-                pass
+                if Dicts.excel['name'] == '':
+                    xlsx_name = Dicts.excel['name'] = PublicUtil.init_xlsx()
+                else:
+                    xlsx_name = Dicts.excel['name']
+                search_keys = input('请输入查询请求的字段，例如：page,size,policy_id\n').replace('，', ',').split(',')
+                case = []
+                steps = 0
+                for index in range(len(search_keys)):
+                    states = []
+                    valid_states = input(f'请输入字段{search_keys[index]}的有效值，例如：正整数\n').replace('，',
+                                                                                                          ',').split(
+                        ',')
+                    invalid_states = input(f'请输入字段{search_keys[index]}的无效值，例如：负数,浮点数\n').replace('，',
+                                                                                                                 ',').split(
+                        ',')
+                    for state in valid_states:
+                        states.append([state, True])
+                    for state in invalid_states:
+                        states.append([state, False])
+                    case.append(PublicUtil.create_get_case(search_key=search_keys[index], states=states, steps=steps))
+                    steps += len(states)
+                case = [item for sublist in case for item in sublist]
+                case.insert(0, Dicts.title['GET'].format(url=Dicts.API['name']))
+                print(case)
+                PublicUtil.write_xlsx(xlsx_name, case)
             elif method == '2':
-                if Dicts.excel['name'] is None:
+                if Dicts.excel['name'] == '':
                     xlsx_name = Dicts.excel['name'] = PublicUtil.init_xlsx()
                 else:
                     xlsx_name = Dicts.excel['name']
@@ -208,13 +244,14 @@ class SelectUtil:
                 for state in invalid_states:
                     states.append([state, False])
                 case = PublicUtil.create_delete_case(method=Dicts.method['4'], index_key=index_key, states=states)
-                batch = int(input('是否需要添加批量删除步骤？\n1-需要  0-跳过'))
+                batch = int(input('是否需要添加批量删除步骤？\n1-需要  0-跳过\n'))
                 if batch:
                     batch_api = input('请输入批量删除的api_url\n') + '批量'
                     batch_case = PublicUtil.create_delete_case(method=Dicts.method['4'], index_key=index_key,
                                                                states=states, batch_api=batch_api,
-                                                               steps=int((len(case)-1)/2))
+                                                               steps=int((len(case) - 1) / 2))
                     case = case + batch_case[1:]
+                print(case)
                 PublicUtil.write_xlsx(xlsx_name, case)
 
 
