@@ -34,12 +34,12 @@ class Dicts:
     }
 
     get_content = {
-        'content': '步骤{step}，通过接口{url}查询{name}时,参数{key}为{state}，其余参数为默认值',
+        'content': '步骤{step}，通过接口{url}查询{name}时,参数{key}为{state}，其余参数为默认值【check{step}】',
         'checks': '【check{step}】{result}'
     }
 
     delete_content = {
-        'content': '步骤{step}，通过接口{url}删除{name},{key}为{state}',
+        'content': '步骤{step}，通过接口{url}删除{name},{key}为{state}【check{step}】',
         'checks': '【check{step}】{result}'
     }
 

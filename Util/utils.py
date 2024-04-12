@@ -96,11 +96,17 @@ class PublicUtil:
         ws = wb.active
         row = ws.max_row + 1
         ws.cell(row=row, column=1, value=cases[0])
-        row += 1
+        # row += 1  # 如需树状展开可解开注释
         for i in range(1, len(cases), 2):
-            ws.cell(row=row, column=2, value=cases[i])
-            ws.cell(row=row, column=3, value=cases[i + 1])
-            row += 1
+            steps = f'B{row}'
+            checks = f'C{row}'
+            current_steps = ws[steps].value
+            current_checks = ws[checks].value
+            ws[steps] = cases[i] if current_steps is None else current_steps + '\n' + cases[i]
+            ws[checks] = cases[i + 1] if current_checks is None else current_checks + '\n' + cases[i + 1]
+            # ws.cell(row=row, column=2, value=cases[i])    # 如需树状展开可解开注释
+            # ws.cell(row=row, column=3, value=cases[i + 1])    # 如需树状展开可解开注释
+            # row += 1  # 如需树状展开可解开注释
         wb.save(xlsx_name)
 
 
@@ -198,7 +204,7 @@ class SelectUtil:
                         PublicUtil.write_xlsx(xlsx_name, case)
 
     @staticmethod
-    def set_get_or_delete_methods(selections: list):
+    def set_get_or_delete_methods():
         print('————\n分别为已选择的参数选择方法以及对应值：')
         data_util = DataUtil()
         methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').replace('，', ','). \
@@ -214,12 +220,10 @@ class SelectUtil:
                 steps = 0
                 for index in range(len(search_keys)):
                     states = []
-                    valid_states = input(f'请输入字段{search_keys[index]}的有效值，例如：正整数\n').replace('，',
-                                                                                                          ',').split(
-                        ',')
-                    invalid_states = input(f'请输入字段{search_keys[index]}的无效值，例如：负数,浮点数\n').replace('，',
-                                                                                                                 ',').split(
-                        ',')
+                    valid_states = input(f'请输入字段{search_keys[index]}的有效值，例如：正整数\n').replace('，', ',')\
+                        .split(',')
+                    invalid_states = input(f'请输入字段{search_keys[index]}的无效值，例如：负数,浮点数\n').replace('，', ',')\
+                        .split(',')
                     for state in valid_states:
                         states.append([state, True])
                     for state in invalid_states:
@@ -291,7 +295,6 @@ class DataUtil:
                 merged_interval.append([start, end])
         increase = list(filter(lambda x: x[0] <= x[1], merged_interval))  # 排除左值大于右值
         increase = [[int(item) for item in sublist] for sublist in increase] if param_type == '1' else increase
-        # final_borders.sort(key=lambda x: x[0])
         final_borders = sorted(increase, key=lambda x: int(x[0]) if param_type == '1' else x[0])  # 排序
         if method:
             return self.equivalent(final_borders)

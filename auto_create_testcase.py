@@ -30,7 +30,7 @@ def main():
             elif choose == 3:
                 SelectUtil.set_post_or_put_methods(selections)
             elif choose == 4:
-                SelectUtil.set_get_or_delete_methods(selections)
+                SelectUtil.set_get_or_delete_methods()
             else:
                 break
     except json.JSONDecodeError as e:
