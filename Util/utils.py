@@ -186,8 +186,7 @@ class SelectUtil:
                     elif case == 3:
                         valid_custom = input('请输入有效自定义值，例如：预定义服务组,自定义服务组\n').replace('，', ','). \
                             split(',')
-                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').replace('，', ',').split(
-                            ',')
+                        invalid_custom = input('请输入无效自定义值，例如：不存在的服务组,空\n').replace('，', ',').split(',')
                         custom = []
                         for value in valid_custom:
                             custom.append([value, True])
@@ -231,7 +230,7 @@ class SelectUtil:
                     case.append(PublicUtil.create_get_case(search_key=search_keys[index], states=states, steps=steps))
                     steps += len(states)
                 case = [item for sublist in case for item in sublist]
-                case.insert(0, Dicts.title['GET'].format(url=Dicts.API['name']))
+                case.insert(0, Dicts.title['GET'].format(url=Dicts.API['url'], param=Dicts.API['name']))
                 print(case)
                 PublicUtil.write_xlsx(xlsx_name, case)
             elif method == '2':

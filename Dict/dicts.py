@@ -24,7 +24,7 @@ class Dicts:
     title = {
         'POST': '检查新建{name}时{param}字段有效值无效值测试',
         'PUT': '检查修改{name}时{param}字段有效值无效值测试',
-        'GET': '验证通过{url}获取',
+        'GET': '验证通过{url}获取{param}测试',
         'DELETE': '检查删除{name}测试'
     }
 
