@@ -204,7 +204,7 @@ class SelectUtil:
 
     @staticmethod
     def set_get_or_delete_methods():
-        print('————\n分别为已选择的参数选择方法以及对应值：')
+        print(f'————\n为{Dicts.API["name"]}选择方法以及配置对应参数：')
         data_util = DataUtil()
         methods = input(f'————\n为字段【{Dicts.API["name"]}】选择methods\n1-GET  2-DELETE  0-exit\n').replace('，', ','). \
             split(',')
@@ -231,7 +231,6 @@ class SelectUtil:
                     steps += len(states)
                 case = [item for sublist in case for item in sublist]
                 case.insert(0, Dicts.title['GET'].format(url=Dicts.API['url'], param=Dicts.API['name']))
-                print(case)
                 PublicUtil.write_xlsx(xlsx_name, case)
             elif method == '2':
                 if Dicts.excel['name'] == '':
@@ -254,7 +253,6 @@ class SelectUtil:
                                                                states=states, batch_api=batch_api,
                                                                steps=int((len(case) - 1) / 2))
                     case = case + batch_case[1:]
-                print(case)
                 PublicUtil.write_xlsx(xlsx_name, case)
 
 
