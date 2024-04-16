@@ -12,5 +12,10 @@
 
 #### 使用说明
 
-请查看WIKI中的泳道图，如有需求请联系
-![image](https://github.com/easlie114514/auto_create_testcase.py/assets/95206537/b1535a65-83bb-4943-9a54-e8a0383ec832)
+![image](https://github.com/easlie114514/auto_create_testcase.py/assets/95206537/b7b587fd-47a8-4afa-9e76-9c371b762844)
+
+结果展示：
+![image](https://github.com/easlie114514/auto_create_testcase.py/assets/95206537/aaa31ff1-22b1-43ad-9334-da0075b589a2)
+
+有需要的可以联系哦
+![image](https://github.com/easlie114514/auto_create_testcase.py/assets/95206537/f067e6c7-9bbd-4c79-a5d9-00d24f529458)
